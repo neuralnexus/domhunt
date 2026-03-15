@@ -37,12 +37,13 @@ The generator uses:
 
 This script uses Verisign RDAP for live `.com` lookup checks. Even though it is a local script, it still makes automated network requests to a public registry-backed service.
 
-Use conservative defaults unless you have a very good reason not to.
+Use conservative defaults unless you have a good reason not to or like to live on the edge. You can push these up by using `--rate X` flags
+Rates are applied across all workers as one pool. A rate of 2 means that all workers, together, will send 2 requests per second across the pool. 
 
 Recommended defaults:
 - `--workers 4`
 - `--rate 2`
-- `--burst 2`
+- `--burst 3`
 
 ## Repository layout
 
@@ -59,7 +60,7 @@ Recommended defaults:
 - Python 3.10+
 - outbound HTTPS access to `https://rdap.verisign.com`
 
-No third-party Python packages are required.
+No third-party Python packages are required. Make a venv and go. 
 
 ## Quick start
 
