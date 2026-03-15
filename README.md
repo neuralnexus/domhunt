@@ -159,6 +159,11 @@ neyra.com
 --bell-on-found        Emit terminal bell for each available domain
 ```
 
+## Cleaning up / Starting a new search
+You can delete the generated sqlite db and text files if you want to get fresh results. 
+`rm -f domhunt.sqlite3 available.txt unknown.txt`
+
+
 ## Notes on interpretation
 
 - A name is only written to `available.txt` when the lookup path returns a clear not-found style result that the script maps to `available`.
