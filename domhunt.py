@@ -16,6 +16,7 @@ import concurrent.futures
 import heapq
 import json
 import random
+import shutil
 import sqlite3
 import string
 import sys
@@ -41,22 +42,105 @@ STYLE_PRESETS: Dict[str, dict] = {
         "vowel_weights": {"a": 1.00, "e": 1.08, "i": 1.02, "o": 0.96, "u": 0.42},
         "semivowel_weights": {"y": 1.18},
         "consonant_weights": {
-            "b": 0.52, "c": 0.95, "d": 0.62, "f": 0.55, "g": 0.45,
-            "h": 0.42, "j": 0.26, "k": 0.32, "l": 0.92, "m": 0.88,
-            "n": 0.95, "p": 0.58, "q": 0.02, "r": 1.00, "s": 0.82,
-            "t": 0.74, "v": 0.66, "w": 0.16, "x": 0.40, "z": 0.30,
+            "b": 0.52,
+            "c": 0.95,
+            "d": 0.62,
+            "f": 0.55,
+            "g": 0.45,
+            "h": 0.42,
+            "j": 0.26,
+            "k": 0.32,
+            "l": 0.92,
+            "m": 0.88,
+            "n": 0.95,
+            "p": 0.58,
+            "q": 0.02,
+            "r": 1.00,
+            "s": 0.82,
+            "t": 0.74,
+            "v": 0.66,
+            "w": 0.16,
+            "x": 0.40,
+            "z": 0.30,
         },
         "pleasant_bigrams": {
-            "ay", "ey", "iy", "oy", "ya", "ye", "yo", "cy", "ly", "ry",
-            "ny", "my", "io", "ia", "eo", "ai", "oa", "ra", "ro", "ri",
-            "la", "li", "lo", "na", "ne", "ni", "va", "vi", "vo", "el",
-            "en", "ar", "or", "on", "is", "us", "ir", "er", "yr", "ix",
+            "ay",
+            "ey",
+            "iy",
+            "oy",
+            "ya",
+            "ye",
+            "yo",
+            "cy",
+            "ly",
+            "ry",
+            "ny",
+            "my",
+            "io",
+            "ia",
+            "eo",
+            "ai",
+            "oa",
+            "ra",
+            "ro",
+            "ri",
+            "la",
+            "li",
+            "lo",
+            "na",
+            "ne",
+            "ni",
+            "va",
+            "vi",
+            "vo",
+            "el",
+            "en",
+            "ar",
+            "or",
+            "on",
+            "is",
+            "us",
+            "ir",
+            "er",
+            "yr",
+            "ix",
         },
         "pleasant_trigrams": {
-            "iya", "eyo", "ayo", "ion", "eon", "ary", "ory", "yra", "lya",
-            "rio", "nia", "vio", "ira", "iro", "exa", "ory", "ely",
+            "iya",
+            "eyo",
+            "ayo",
+            "ion",
+            "eon",
+            "ary",
+            "ory",
+            "yra",
+            "lya",
+            "rio",
+            "nia",
+            "vio",
+            "ira",
+            "iro",
+            "exa",
+            "ory",
+            "ely",
         },
-        "preferred_endings": {"io", "ia", "eo", "ya", "yn", "yr", "ra", "ro", "on", "or", "el", "en", "is", "us", "ix"},
+        "preferred_endings": {
+            "io",
+            "ia",
+            "eo",
+            "ya",
+            "yn",
+            "yr",
+            "ra",
+            "ro",
+            "on",
+            "or",
+            "el",
+            "en",
+            "is",
+            "us",
+            "ix",
+        },
     },
     "soft": {
         "vowels": PURE_VOWELS,
@@ -65,14 +149,48 @@ STYLE_PRESETS: Dict[str, dict] = {
         "vowel_weights": {"a": 1.02, "e": 1.18, "i": 1.08, "o": 0.92, "u": 0.34},
         "semivowel_weights": {"y": 0.92},
         "consonant_weights": {
-            "b": 0.34, "c": 0.62, "d": 0.45, "f": 0.30, "g": 0.24,
-            "h": 0.28, "j": 0.18, "k": 0.12, "l": 1.15, "m": 1.00,
-            "n": 1.02, "p": 0.26, "q": 0.01, "r": 1.05, "s": 0.70,
-            "t": 0.44, "v": 0.26, "w": 0.10, "x": 0.10, "z": 0.08,
+            "b": 0.34,
+            "c": 0.62,
+            "d": 0.45,
+            "f": 0.30,
+            "g": 0.24,
+            "h": 0.28,
+            "j": 0.18,
+            "k": 0.12,
+            "l": 1.15,
+            "m": 1.00,
+            "n": 1.02,
+            "p": 0.26,
+            "q": 0.01,
+            "r": 1.05,
+            "s": 0.70,
+            "t": 0.44,
+            "v": 0.26,
+            "w": 0.10,
+            "x": 0.10,
+            "z": 0.08,
         },
         "pleasant_bigrams": {
-            "la", "le", "li", "lo", "ma", "me", "mi", "na", "ne", "ni",
-            "ra", "re", "ri", "ro", "el", "en", "ia", "io", "eo", "ly",
+            "la",
+            "le",
+            "li",
+            "lo",
+            "ma",
+            "me",
+            "mi",
+            "na",
+            "ne",
+            "ni",
+            "ra",
+            "re",
+            "ri",
+            "ro",
+            "el",
+            "en",
+            "ia",
+            "io",
+            "eo",
+            "ly",
         },
         "pleasant_trigrams": {"lia", "rio", "mia", "nea", "elo", "ria", "nio", "lea"},
         "preferred_endings": {"ia", "io", "ea", "ra", "la", "el", "en", "ly"},
@@ -84,12 +202,42 @@ STYLE_PRESETS: Dict[str, dict] = {
         "vowel_weights": {"a": 0.74, "e": 0.96, "i": 0.86, "o": 0.58, "u": 0.22},
         "semivowel_weights": {"y": 1.26},
         "consonant_weights": {
-            "b": 0.16, "c": 1.00, "d": 0.32, "f": 0.32, "g": 0.42,
-            "h": 0.42, "j": 0.06, "k": 0.58, "l": 0.26, "m": 0.24,
-            "n": 0.30, "p": 0.40, "q": 0.01, "r": 0.82, "s": 0.44,
-            "t": 0.68, "v": 0.70, "w": 0.04, "x": 1.36, "z": 0.74,
+            "b": 0.16,
+            "c": 1.00,
+            "d": 0.32,
+            "f": 0.32,
+            "g": 0.42,
+            "h": 0.42,
+            "j": 0.06,
+            "k": 0.58,
+            "l": 0.26,
+            "m": 0.24,
+            "n": 0.30,
+            "p": 0.40,
+            "q": 0.01,
+            "r": 0.82,
+            "s": 0.44,
+            "t": 0.68,
+            "v": 0.70,
+            "w": 0.04,
+            "x": 1.36,
+            "z": 0.74,
         },
-        "pleasant_bigrams": {"cx", "xt", "xr", "xy", "ix", "ex", "tr", "vr", "cr", "cy", "ty", "ry", "yr"},
+        "pleasant_bigrams": {
+            "cx",
+            "xt",
+            "xr",
+            "xy",
+            "ix",
+            "ex",
+            "tr",
+            "vr",
+            "cr",
+            "cy",
+            "ty",
+            "ry",
+            "yr",
+        },
         "pleasant_trigrams": {"xyr", "vex", "trix", "zyr", "nex", "ryx", "xer"},
         "preferred_endings": {"ix", "yr", "ex", "on", "or"},
     },
@@ -103,11 +251,47 @@ PATTERNS = {
 }
 
 COMMON_CLUSTERS = {
-    "bl", "br", "cl", "cr", "dr", "fl", "fr", "gl", "gr", "pl", "pr",
-    "sl", "sm", "sn", "sp", "st", "tr", "ch", "sh", "th", "ph", "vr",
-    "cy", "ly", "ry",
+    "bl",
+    "br",
+    "cl",
+    "cr",
+    "dr",
+    "fl",
+    "fr",
+    "gl",
+    "gr",
+    "pl",
+    "pr",
+    "sl",
+    "sm",
+    "sn",
+    "sp",
+    "st",
+    "tr",
+    "ch",
+    "sh",
+    "th",
+    "ph",
+    "vr",
+    "cy",
+    "ly",
+    "ry",
 }
-BAD_BIGRAMS = {"qj", "jq", "zx", "xq", "qx", "jj", "ww", "wu", "uq", "qo", "qa", "qe", "qi"}
+BAD_BIGRAMS = {
+    "qj",
+    "jq",
+    "zx",
+    "xq",
+    "qx",
+    "jj",
+    "ww",
+    "wu",
+    "uq",
+    "qo",
+    "qa",
+    "qe",
+    "qi",
+}
 BAD_TRIGRAMS = {"qzx", "zxq", "jjj", "www", "qxj", "jqx", "yyy"}
 
 
@@ -164,10 +348,20 @@ class DomainDB:
 
     def get_status(self, name: str) -> Optional[str]:
         with self.lock:
-            row = self.conn.execute("SELECT status FROM domains WHERE name = ?", (name,)).fetchone()
+            row = self.conn.execute(
+                "SELECT status FROM domains WHERE name = ?", (name,)
+            ).fetchone()
         return row[0] if row else None
 
-    def upsert(self, name: str, status: str, score: float, source: str, http_status: Optional[int], note: str) -> None:
+    def upsert(
+        self,
+        name: str,
+        status: str,
+        score: float,
+        source: str,
+        http_status: Optional[int],
+        note: str,
+    ) -> None:
         with self.lock:
             self.conn.execute(
                 """
@@ -182,7 +376,16 @@ class DomainDB:
                     http_status=excluded.http_status,
                     note=excluded.note
                 """,
-                (name, len(name), status, score, source, time.time(), http_status, note),
+                (
+                    name,
+                    len(name),
+                    status,
+                    score,
+                    source,
+                    time.time(),
+                    http_status,
+                    note,
+                ),
             )
             self.conn.commit()
 
@@ -192,7 +395,9 @@ class DomainDB:
                 "SELECT name FROM domains WHERE status = ? ORDER BY length ASC, score DESC, name ASC",
                 (status,),
             ).fetchall()
-        Path(out_path).write_text("".join(f"{name}.com\n" for (name,) in rows), encoding="utf-8")
+        Path(out_path).write_text(
+            "".join(f"{name}.com\n" for (name,) in rows), encoding="utf-8"
+        )
 
     def stats(self) -> dict:
         with self.lock:
@@ -264,7 +469,7 @@ def pronounce_score(name: str, style: dict) -> float:
         score -= 7.0
 
     for i in range(n - 1):
-        bg = name[i:i+2]
+        bg = name[i : i + 2]
         if bg in style["pleasant_bigrams"]:
             score += 2.0
         if bg in COMMON_CLUSTERS:
@@ -273,7 +478,7 @@ def pronounce_score(name: str, style: dict) -> float:
             score -= 7.0
 
     for i in range(n - 2):
-        tg = name[i:i+3]
+        tg = name[i : i + 3]
         if tg in style["pleasant_trigrams"]:
             score += 3.0
         if tg in BAD_TRIGRAMS:
@@ -326,7 +531,9 @@ def exhaustive_names(length: int) -> Iterator[str]:
     raise ValueError("exhaustive_names only supports lengths 1..3")
 
 
-def rdap_lookup(fqdn: str, user_agent: str, timeout: float) -> Tuple[str, Optional[int], str]:
+def rdap_lookup(
+    fqdn: str, user_agent: str, timeout: float
+) -> Tuple[str, Optional[int], str]:
     url = f"https://rdap.verisign.com/com/v1/domain/{urllib.parse.quote(fqdn)}"
     req = urllib.request.Request(
         url,
@@ -356,7 +563,9 @@ def rdap_lookup(fqdn: str, user_agent: str, timeout: float) -> Tuple[str, Option
         return "unknown", None, repr(e)
 
 
-def candidate_stream(min_length: int, max_length: int, style: dict) -> Iterator[Tuple[str, str, float]]:
+def candidate_stream(
+    min_length: int, max_length: int, style: dict
+) -> Iterator[Tuple[str, str, float]]:
     lengths = list(range(min_length, max_length + 1))
 
     for n in (1, 2, 3):
@@ -392,26 +601,58 @@ def candidate_stream(min_length: int, max_length: int, style: dict) -> Iterator[
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Find unregistered .com domains locally with RDAP checks and a brandable generator.")
+    p = argparse.ArgumentParser(
+        description="Find unregistered .com domains locally with RDAP checks and a brandable generator."
+    )
     p.add_argument("--min-length", type=int, default=1)
     p.add_argument("--max-length", type=int, default=7)
     p.add_argument("--exact-length", type=int, default=None)
     p.add_argument("--style", choices=sorted(STYLE_PRESETS), default="brandable")
     p.add_argument("--workers", type=int, default=4)
-    p.add_argument("--rate", type=float, default=2.0, help="Global RDAP requests per second.")
+    p.add_argument(
+        "--rate", type=float, default=2.0, help="Global RDAP requests per second."
+    )
     p.add_argument("--burst", type=int, default=2)
     p.add_argument("--timeout", type=float, default=8.0)
-    p.add_argument("--top-buffer", type=int, default=400, help="Priority queue depth for 4-7 letter candidates.")
+    p.add_argument(
+        "--top-buffer",
+        type=int,
+        default=400,
+        help="Priority queue depth for 4-7 letter candidates.",
+    )
     p.add_argument("--max-results", type=int, default=100, help="0 means unlimited.")
     p.add_argument("--max-checks", type=int, default=5000, help="0 means unlimited.")
     p.add_argument("--db", default="domhunt.sqlite3")
     p.add_argument("--output", default="available.txt")
     p.add_argument("--unknown-output", default="unknown.txt")
     p.add_argument("--user-agent", default="domhunt/0.1 (+local script)")
-    p.add_argument("--resume", action="store_true", help="Skip candidates already present in the SQLite cache.")
-    p.add_argument("--retry-unknowns", action="store_true", help="Allow re-checking candidates previously marked unknown.")
-    p.add_argument("--seed", type=int, default=None, help="Optional RNG seed for repeatable random generation.")
+    p.add_argument(
+        "--resume",
+        action="store_true",
+        help="Skip candidates already present in the SQLite cache.",
+    )
+    p.add_argument(
+        "--retry-unknowns",
+        action="store_true",
+        help="Allow re-checking candidates previously marked unknown.",
+    )
+    p.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Optional RNG seed for repeatable random generation.",
+    )
     p.add_argument("--verbose", action="store_true")
+    p.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="Disable live progress indicator on stderr.",
+    )
+    p.add_argument(
+        "--bell-on-found",
+        action="store_true",
+        help="Emit a terminal bell when an available domain is found.",
+    )
     return p.parse_args(argv)
 
 
@@ -446,6 +687,42 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     found = 0
     checked = 0
     generated = 0
+    started = time.monotonic()
+    spinner_frames = "|/-\\"
+    spinner_index = 0
+    progress_enabled = sys.stderr.isatty() and not args.no_progress and not args.verbose
+    last_progress_render = 0.0
+    progress_interval = 0.15
+
+    def render_progress(in_flight: int, force: bool = False) -> None:
+        nonlocal spinner_index, last_progress_render
+        if not progress_enabled:
+            return
+        now = time.monotonic()
+        if not force and (now - last_progress_render) < progress_interval:
+            return
+        elapsed = max(now - started, 0.001)
+        rate = checked / elapsed
+        spinner = spinner_frames[spinner_index % len(spinner_frames)]
+        spinner_index += 1
+        line = (
+            f"\r{spinner} generated={generated} checked={checked} found={found} "
+            f"in_flight={in_flight} queue={len(pq)} rate={rate:.2f}/s"
+        )
+        width = shutil.get_terminal_size((120, 20)).columns
+        clipped = line[: max(1, width - 1)]
+        sys.stderr.write(clipped)
+        if len(clipped) < width - 1:
+            sys.stderr.write(" " * (width - 1 - len(clipped)))
+        sys.stderr.flush()
+        last_progress_render = now
+
+    def clear_progress_line() -> None:
+        if not progress_enabled:
+            return
+        width = shutil.get_terminal_size((120, 20)).columns
+        sys.stderr.write("\r" + (" " * max(1, width - 1)) + "\r")
+        sys.stderr.flush()
 
     def fill_queue() -> None:
         nonlocal generated
@@ -461,12 +738,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     pass
                 else:
                     continue
-            heapq.heappush(pq, PrioritizedCandidate(priority=-score, payload=(name, source, score)))
+            heapq.heappush(
+                pq, PrioritizedCandidate(priority=-score, payload=(name, source, score))
+            )
             generated += 1
 
     def lookup_task(name: str, source: str, score: float):
         bucket.acquire()
-        status, http_status, note = rdap_lookup(f"{name}.com", args.user_agent, args.timeout)
+        status, http_status, note = rdap_lookup(
+            f"{name}.com", args.user_agent, args.timeout
+        )
         if status == "unknown":
             time.sleep(0.6 + random.random() * 0.8)
         return name, source, score, status, http_status, note
@@ -477,47 +758,75 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         while True:
             fill_queue()
+            render_progress(in_flight=len(futures))
 
-            while len(futures) < args.workers and pq and not should_stop(found, checked + len(futures), args.max_results, args.max_checks):
+            while (
+                len(futures) < args.workers
+                and pq
+                and not should_stop(
+                    found, checked + len(futures), args.max_results, args.max_checks
+                )
+            ):
                 item = heapq.heappop(pq)
                 name, source, score = item.payload
                 futures.add(executor.submit(lookup_task, name, source, score))
+                render_progress(in_flight=len(futures))
 
             if not futures:
                 break
 
-            done, futures = concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_COMPLETED)
+            done, futures = concurrent.futures.wait(
+                futures, return_when=concurrent.futures.FIRST_COMPLETED
+            )
             for fut in done:
                 name, source, score, status, http_status, note = fut.result()
                 checked += 1
-                db.upsert(name=name, status=status, score=score, source=source, http_status=http_status, note=note)
+                db.upsert(
+                    name=name,
+                    status=status,
+                    score=score,
+                    source=source,
+                    http_status=http_status,
+                    note=note,
+                )
 
                 if status == "available":
                     found += 1
                     print(f"{name}.com")
+                    if args.bell_on_found:
+                        print("\a", end="", file=sys.stderr, flush=True)
                 elif status == "unknown":
                     unknowns_seen.add(name)
 
                 if args.verbose:
-                    print(json.dumps({
-                        "name": name,
-                        "fqdn": f"{name}.com",
-                        "status": status,
-                        "http_status": http_status,
-                        "score": score,
-                        "source": source,
-                        "checked": checked,
-                        "found": found,
-                    }), file=sys.stderr)
+                    print(
+                        json.dumps(
+                            {
+                                "name": name,
+                                "fqdn": f"{name}.com",
+                                "status": status,
+                                "http_status": http_status,
+                                "score": score,
+                                "source": source,
+                                "checked": checked,
+                                "found": found,
+                            }
+                        ),
+                        file=sys.stderr,
+                    )
 
                 if should_stop(found, checked, args.max_results, args.max_checks):
                     break
+                render_progress(in_flight=len(futures))
 
             if should_stop(found, checked, args.max_results, args.max_checks):
                 break
 
+    clear_progress_line()
     db.export_status("available", args.output)
-    Path(args.unknown_output).write_text("".join(f"{name}.com\n" for name in sorted(unknowns_seen)), encoding="utf-8")
+    Path(args.unknown_output).write_text(
+        "".join(f"{name}.com\n" for name in sorted(unknowns_seen)), encoding="utf-8"
+    )
 
     print("", file=sys.stderr)
     print("done", file=sys.stderr)

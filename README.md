@@ -120,6 +120,12 @@ xoi.com
 neyra.com
 ```
 
+### Standard error
+
+- Live spinner/progress line is shown by default when stderr is a TTY.
+- Use `--no-progress` to disable it.
+- Use `--bell-on-found` to ring the terminal bell each time an available domain is found.
+
 ### Files
 
 - `domhunt.sqlite3` — local cache of all checked names and statuses
@@ -148,6 +154,8 @@ neyra.com
 --retry-unknowns       Re-run names previously marked unknown
 --seed INT             Optional RNG seed for repeatable random generation
 --verbose              Emit JSON progress records to stderr
+--no-progress          Disable live progress indicator on stderr
+--bell-on-found        Emit terminal bell for each available domain
 ```
 
 ## Notes on interpretation
